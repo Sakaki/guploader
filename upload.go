@@ -109,7 +109,7 @@ func getApiClient(currentDir string, settings *Settings) *http.Client {
 		}
 		// トークンを保存
 		tokenBytes, err := json.Marshal(token)
-		if err != nil {
+		if err == nil {
 			ioutil.WriteFile(tokenStorePath, tokenBytes, os.ModePerm)
 		}
 	}

@@ -8,6 +8,7 @@ import (
 	"os"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"golang.org/x/net/context"
 	"encoding/json"
 	"io"
 	"path"
@@ -16,6 +17,7 @@ import (
 	"net/http"
 	"strings"
 	"regexp"
+	"flag"
 )
 
 type Settings struct {
@@ -32,17 +34,26 @@ func Exists(filename string) bool {
 }
 
 func main() {
+	var err error
 	currentDir := path.Dir(os.Args[0])
+	// オプション読み込み
+	authOnly := flag.Bool("authOnly", false, "Only execute authorization.")
+	noLoop := flag.Bool("noLoop", false, "Upload photos once.")
+	flag.Parse()
 	// 設定ファイル読み込み
 	settingsPath := fmt.Sprintf("%s/%s", currentDir, "settings.json")
-	settingsJsonRaw, _ := ioutil.ReadFile(settingsPath)
+	settingsJsonRaw, err := ioutil.ReadFile(settingsPath)
+	if err != nil {
+		log.Fatalf("設定ファイルを読み込めませんでした: %s", err)
+	}
 	settings := new(Settings)
 	if err := json.Unmarshal(settingsJsonRaw, settings); err != nil {
-		log.Fatalf("JSONを正しくパース出来ませんでした: %s", err)
+		log.Fatalf("設定ファイルを正しくパース出来ませんでした: %s", err)
 	}
 	client := getApiClient(currentDir, settings)
-
-	var err error
+	if *authOnly {
+		return
+	}
 	var photoList string
 	for photoList == "" {
 		photoList, err = getPhotoList(settings.UserID, settings.AlbumID, client)
@@ -53,9 +64,13 @@ func main() {
 	}
 	log.Println(photoList)
 	log.Println(len(photoList))
-	for ;; {
+	if *noLoop {
 		photoList = execUpload(settings, client, photoList)
-		time.Sleep(1 * time.Second)
+	} else {
+		for ;; {
+			photoList = execUpload(settings, client, photoList)
+			time.Sleep(1 * time.Second)
+		}
 	}
 }
 
@@ -88,13 +103,18 @@ func getApiClient(currentDir string, settings *Settings) *http.Client {
 		}
 		// アクセストークンを取得
 		var err error
-		token, err = authConf.Exchange(oauth2.NoContext, s)
+		token, err = authConf.Exchange(context.Background(), s)
 		if err != nil {
 			log.Fatalf("exchange error: %s", err)
 		}
+		// トークンを保存
+		tokenBytes, err := json.Marshal(token)
+		if err != nil {
+			ioutil.WriteFile(tokenStorePath, tokenBytes, os.ModePerm)
+		}
 	}
 	// httpクライアントを取得
-	client := authConf.Client(oauth2.NoContext, token)
+	client := authConf.Client(context.Background(), token)
 	return client
 }
 

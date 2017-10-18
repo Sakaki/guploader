@@ -3,5 +3,6 @@
   "album_id": "",
   "client_id": "",
   "client_secret": "",
-  "target_dir": ""
+  "target_dir": "",
+  "extensions": [".JPG", ".jpg", ".PNG", ".png", ".pdf", ".PDF"]
 }

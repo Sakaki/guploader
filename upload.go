@@ -27,6 +27,7 @@ type Settings struct {
 	ClientID string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
 	TargetDir string `json:"target_dir"`
+	Extensions []string `json:"extensions"`
 }
 
 func Exists(filename string) bool {
@@ -176,9 +177,17 @@ func execUpload(settings *Settings, client *http.Client, photoList string) strin
 		dateFormat := file.ModTime().Format("2006_01_02_15_04_05")
 		extension := path.Ext(file.Name())
 		filenameWithDate := file.Name()[0:len(file.Name()) - len(extension)] + "_" + dateFormat
-			log.Println(filenameWithDate)
-		// ファイルが送信済みかjpgでない場合はスキップ
-		if path.Ext(targetPath) != ".JPG" || strings.Contains(photoList, filenameWithDate) {
+		log.Println(filenameWithDate)
+		// 拡張子チェック
+		hasCorrectExtension := false
+		for _, targetExtension := range settings.Extensions {
+			if extension == targetExtension {
+				hasCorrectExtension = true
+				break
+			}
+		}
+		// ファイルが送信済みか拡張子が合わなかったらスキップ
+		if hasCorrectExtension == false || strings.Contains(photoList, filenameWithDate) {
 			log.Printf("Skipping %s", targetPath)
 			continue
 		}

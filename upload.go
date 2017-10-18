@@ -36,13 +36,12 @@ func Exists(filename string) bool {
 
 func main() {
 	var err error
-	// 日付を合わせる
-	easy_ntpdate.SetDate()
 	// カレントディレクトリを取得
 	currentDir := path.Dir(os.Args[0])
 	// 引数の読み込み
 	authOnly := flag.Bool("authOnly", false, "Only execute authorization.")
 	noLoop := flag.Bool("noLoop", false, "Upload photos once.")
+	setDate := flag.Bool("setDate", false, "Fix current date for ssl verification.")
 	flag.Parse()
 	// 設定ファイル読み込み
 	settingsPath := fmt.Sprintf("%s/%s", currentDir, "settings.json")
@@ -53,6 +52,10 @@ func main() {
 	settings := new(Settings)
 	if err := json.Unmarshal(settingsJsonRaw, settings); err != nil {
 		log.Fatalf("設定ファイルを正しくパース出来ませんでした: %s", err)
+	}
+	// オプションで指定された場合、日付を合わせる
+	if *setDate {
+		easy_ntpdate.SetDate()
 	}
 	client := getApiClient(currentDir, settings)
 	if *authOnly {

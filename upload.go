@@ -18,6 +18,7 @@ import (
 	"strings"
 	"regexp"
 	"flag"
+	"github.com/Sakaki/easy_ntpdate/easy_ntpdate"
 )
 
 type Settings struct {
@@ -35,8 +36,11 @@ func Exists(filename string) bool {
 
 func main() {
 	var err error
+	// 日付を合わせる
+	easy_ntpdate.SetDate()
+	// カレントディレクトリを取得
 	currentDir := path.Dir(os.Args[0])
-	// オプション読み込み
+	// 引数の読み込み
 	authOnly := flag.Bool("authOnly", false, "Only execute authorization.")
 	noLoop := flag.Bool("noLoop", false, "Upload photos once.")
 	flag.Parse()
